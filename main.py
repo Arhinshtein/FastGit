@@ -30,7 +30,13 @@ def main():
     #Create branch
 
     parse_create_branch = subparser.add_parser("create-branch", help = "Создание ветки")
-    parse_create_branch.add_argument("-name", type=str, default="main", help = "Имя ветки")
+    parse_create_branch.add_argument("--name", "-n", type=str, default="main", help = "Имя ветки")
+
+    #Commit
+
+    parse_commit = subparser.add_parser("commit", help = "Закоммитить проект")
+    parse_commit.add_argument("--name", "-n", type=str, default="New Commit", help = "Имя коммита")
+    parse_commit.add_argument("--file", "-f", nargs="+", help = "Указать определённый список файлов для коммита")
 
     argument = parser.parse_args()
 
@@ -49,6 +55,13 @@ def main():
         case "create-branch":
             pass
             #print(f"c-b {argument.name}")
+
+        case "commit":
+            if argument.file:
+                print(argument.file)
+                subprocess.run(["git", "add"] + argument.file)
+
+            subprocess.run(["git", "commit", "-m", argument.name])
 
 if __name__ == '__main__':
     auth()
