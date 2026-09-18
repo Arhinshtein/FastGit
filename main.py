@@ -4,16 +4,46 @@ import argparse
 import subprocess
 from pathlib import Path
 
+parser = argparse.ArgumentParser(description="Команды и их примеры использования")
+subparser = parser.add_subparsers(dest = "command", help = "Команды для созданий репозиториев или веток", required = True)
+
+def is_function(string : str): return callable(globals().get(string))
+
+# new_command("create-repository", "create_rep").add_arg("-")
+class new_command():
+
+    global parser
+    global subparser
+
+    def __init__ (self, name_command, command, help = ""):
+        self.name_command = name_command
+        self.command = command
+        self.help = help
+        self.registered_command = self.creating_command()
+
+    def add_arg(self, **dictonary_arg_param): # {"-n" : type}
+
+        for key, command in dictonary_arg_param.items():
+            if key.count("-") < 1 or key.count('-') > 2: print("В иммени аргумента может быть либо -, либо --"); continue
+
+            if command == "store_true": self.registered_command.add_argument(key, actions = command)
+            else: self.registered_command.add_argument(key, type = command)
+
+
+    def creating_command(self):
+        return subparser.add_parser(self.name_command, help = self.help)
+
+
+
+def push(): subprocess.run(["git", "push", "origin", "main"])
 
 def auth():
     path = Path(__file__).resolve().parent
     print(path)
 
 def main():
-
-    parser = argparse.ArgumentParser(description="Команды и их примеры использования")
-
-    subparser = parser.add_subparsers(dest = "command", help = "Команды для созданий репозиториев или веток", required = True)
+    global parser
+    global subparser
 
     #Create repository
 
@@ -37,6 +67,13 @@ def main():
     parse_commit = subparser.add_parser("commit", help = "Закоммитить проект")
     parse_commit.add_argument("--name", "-n", type=str, default="New Commit", help = "Имя коммита")
     parse_commit.add_argument("--file", "-f", nargs="+", help = "Указать определённый список файлов для коммита")
+
+    #Push
+
+    #parse_push = subparser.add_parser("push", help = "Запушить проект")
+    #parse_push.add_argument("--commit", "-c", nargs='*', help = "Автоматический коммит перед пушем, через пробел можно перечислить файлы для коммита")
+
+    new_command("push", push)
 
     argument = parser.parse_args()
 
@@ -62,6 +99,16 @@ def main():
                 subprocess.run(["git", "add"] + argument.file)
 
             subprocess.run(["git", "commit", "-m", argument.name])
+
+
+        #case "push":
+        #    if isinstance(argument.commit, list):
+        #        if len(argument.commit) == 0:
+        #            subprocess.run(["git", "commit", "-m", argument.name])
+        #        else:
+        #            subprocess.run(["git", "add"] + argument.commit)
+        #
+        #    subprocess.run(["git", "push", "origin", "main"])
 
 if __name__ == '__main__':
     auth()
