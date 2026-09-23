@@ -48,8 +48,6 @@ def auth():
     print(path)
 
 def main():
-    global parser
-    global subparser
 
     #Create repository
 
