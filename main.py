@@ -9,33 +9,39 @@ subparser = parser.add_subparsers(dest = "command", help = "Команды дл�
 
 def is_function(string : str): return callable(globals().get(string))
 
-# new_command("create-repository", "create_rep").add_arg("-")
-class new_command():
-
-    global parser
-    global subparser
+# new_command("create-repository", "create_rep").add_arg("-n", def, help)
+class NewCommand():
 
     def __init__ (self, name_command, command, help = ""):
         self.name_command = name_command
         self.command = command
         self.help = help
-        self.registered_command = self.creating_command()
+        self.registered_command = self.creating_command
+        self.registered_command.set_defaults(func=self.command)
 
-    def add_arg(self, **dictonary_arg_param): # {"-n" : type}
+    def add_arg(self, argument_name : str, command_name : str, command_type): # {"-n" : type}
 
-        for key, command in dictonary_arg_param.items():
-            if key.count("-") < 1 or key.count('-') > 2: print("В иммени аргумента может быть либо -, либо --"); continue
+        if not(argument_name.startswith("-") or argument_name.startswith("--")): print("В иммени аргумента может быть либо -, либо --"); return
 
-            if command == "store_true": self.registered_command.add_argument(key, actions = command)
-            else: self.registered_command.add_argument(key, type = command)
+        if command_type == "store_true":
+            self.registered_command.add_argument(argument_name, dest = command_type, action = command_name)
+        else:
+            self.registered_command.add_argument(argument_name, type = command_name, dest = command_type, help = "help")
 
-
+    @property
     def creating_command(self):
         return subparser.add_parser(self.name_command, help = self.help)
 
 
+def push(string_value):
+   if isinstance(string_value, argparse.Namespace):
+       subprocess.run(["git", "commit", "-m", "test_func"])
+       subprocess.run(["git", "push", "origin", "main"])
+       print(f"ok, {string_value}, {type(string_value)}")
 
-def push(): subprocess.run(["git", "push", "origin", "main"])
+   else:
+       subprocess.run(["git", "add", string_value])
+       print("file")
 
 def auth():
     path = Path(__file__).resolve().parent
@@ -47,10 +53,18 @@ def main():
 
     #Create repository
 
-    parser_create_rep = subparser.add_parser("create-repository", help = "Создание репозиторий")
-    parser_create_rep.add_argument("-n", "--name", type=str, default = "project-test", help = "Имя репозитория")
-    parser_create_rep.add_argument("--public", action = "store_true", help = "Репозиторий будет публичным")
-    parser_create_rep.add_argument("--private", action = "store_true", help = "Репозиторий будет приватным")
+    parser_create_rep = subparser.add_parser(
+        "create-repository", help="Создание репозитория"
+    )
+    parser_create_rep.add_argument(
+        "-n", "--name", type=str, default="project-test", help="Имя репозитория"
+    )
+    parser_create_rep.add_argument(
+        "--public", action="store_true", help="Репозиторий будет публичным"
+    )
+    parser_create_rep.add_argument(
+        "--private", action="store_true", help="Репозиторий будет приватным"
+    )
 
     #Delete repository
     parser_delete_rep = subparser.add_parser("delete-repository", help = "Удаление репозитория")
@@ -70,12 +84,15 @@ def main():
 
     #Push
 
-    #parse_push = subparser.add_parser("push", help = "Запушить проект")
-    #parse_push.add_argument("--commit", "-c", nargs='*', help = "Автоматический коммит перед пушем, через пробел можно перечислить файлы для коммита")
+    parse_push = subparser.add_parser("push", help = "Запушить проект")
+    parse_push.add_argument("--commit", "-c", type=push, nargs='*', help = "Автоматический коммит перед пушем, через пробел можно перечислить файлы для коммита") #nargs='*'
+    parse_push.set_defaults(func=push)
 
-    new_command("push", push)
+    #pu = NewCommand("push", push, "Запушить проект")
+    #pu.add_arg("-c", "push", "store_true")
 
     argument = parser.parse_args()
+    argument.func(argument)
 
     match argument.command:
         case "create-repository":
